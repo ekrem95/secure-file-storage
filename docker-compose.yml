@@ -1,0 +1,28 @@
+version: '3'
+services:
+    # web:
+    #     build: .
+    #     ports:
+    #         - '5000:5000'
+    #     volumes:
+    #         - .:/code
+    db:
+        image: postgres:11-alpine
+        restart: always
+        ports:
+            - '5432:5432'
+        volumes:
+            - ./data/postgres:/var/lib/postgresql/data
+        environment:
+            # psql -h 127.0.0.1 -U root -d main
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=pass
+            - POSTGRES_DB=main
+    redis:
+        image: redis:alpine
+        restart: always
+        command: --requirepass pass
+        ports:
+            - 6379:6379
+        volumes:
+            - ./data/redis:/data
