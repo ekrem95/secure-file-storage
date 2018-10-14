@@ -15,16 +15,16 @@ var (
 )
 
 func init() {
-	password, err := hashPassword(testPassword)
-	if err != nil {
-		panic(err)
-	}
-
-	query := schema(password)
-	if _, err := Exec(query); err != nil {
-		panic(err)
-	}
-
+	// u := User{Password: testPassword}
+	// password, err := u.HashPassword(testPassword)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	//
+	// query := schema(password)
+	// if _, err := Exec(query); err != nil {
+	// 	panic(err)
+	// }
 }
 
 // Exec executes a query without returning any rows.
@@ -33,6 +33,7 @@ func Exec(query string, args ...interface{}) (sql.Result, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 
 	res, err := db.Exec(query, args...)
 	if err != nil {
@@ -48,6 +49,7 @@ func Query(query string, args ...interface{}) (*sql.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -63,6 +65,7 @@ func QueryRow(query string, args ...interface{}) (*sql.Row, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
 
 	row := db.QueryRow(query, args...)
 
