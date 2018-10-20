@@ -10,32 +10,27 @@ import (
 	"github.com/thedevsaddam/govalidator"
 )
 
-// Response is a custom response type
-type Response struct {
+// ErrorResponse is a custom response type
+type ErrorResponse struct {
 	StatusCode int    `json:"statusCode"`
 	Error      string `json:"error"`
 	Message    string `json:"message"`
 }
 
-const (
-	internalError = `{"statusCode": 500,"error": "Internal Server Error","message": "An internal server error occurred"}`
-	validation    = "validation"
-)
+const validation = "validation"
 
 var errors = map[int]string{
 	http.StatusBadRequest:          "Bad Request",
+	http.StatusUnauthorized:        "Unauthorized",
 	http.StatusNotFound:            "Not Found",
 	http.StatusInternalServerError: "Internal Server Error",
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request, status int, message string) {
-	res := &Response{StatusCode: status, Error: errors[status], Message: message}
+	res := &ErrorResponse{StatusCode: status, Error: errors[status], Message: message}
 	b, err := json.Marshal(res)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-
-		fmt.Fprint(w, internalError)
+		internalError(w, r)
 		return
 	}
 
@@ -43,6 +38,19 @@ func errorHandler(w http.ResponseWriter, r *http.Request, status int, message st
 	w.WriteHeader(status)
 
 	fmt.Fprint(w, string(b))
+}
+
+func internalError(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+
+	fmt.Fprint(w, `{"statusCode": 500,"error": "Internal Server Error","message": "An internal server error occurred"}`)
+}
+
+func response(w http.ResponseWriter, r *http.Request, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(data)
 }
 
 func validate(r *http.Request, rules govalidator.MapData, data *database.User) url.Values {

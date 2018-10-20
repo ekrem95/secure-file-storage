@@ -13,58 +13,28 @@ type Token interface {
 	Generate() (int, error)
 }
 
-// AccessTokenResponse ...
-type AccessTokenResponse struct {
-	ClientID     int
-	AtokenID     int
-	AtokenSecret string
-}
-
-// GiveAccess ...
-func GiveAccess(t *Token, userID int) (AccessTokenResponse, error) {
-	var response AccessTokenResponse
-
-	client := Client{Type: "confidential"}
-	clientID, err := client.Generate()
-	if err != nil {
-		return response, err
-	}
-
-	response.ClientID = clientID
-
-	atoken := AccessToken{ClientID: clientID, Scopes: "", UserID: userID}
-	atokenID, err := atoken.Generate()
-	if err != nil {
-		return response, err
-	}
-
-	response.AtokenID = atokenID
-
-	return response, nil
-}
-
 // AccessToken type
 type AccessToken struct {
-	ID           int       `json:"id"`
-	ClientID     int       `json:"client_id"`
-	Expires      time.Time `json:"expires"`
-	RefreshToken string    `json:"refresh_token"`
-	Scopes       string    `json:"scopes"`
-	Secret       string    `json:"secret"`
-	UserID       int       `json:"user_id"`
-	RedirectURI  string    `json:"redirect_uri"`
+	ID           int            `json:"id"`
+	ClientID     int            `json:"client_id"`
+	Expires      time.Time      `json:"expires"`
+	RefreshToken sql.NullString `json:"refresh_token"`
+	Scopes       string         `json:"scopes"`
+	Secret       string         `json:"secret"`
+	UserID       int            `json:"user_id"`
+	RedirectURI  sql.NullString `json:"redirect_uri"`
 }
 
 // Find returns an AccessToken
-func (*AccessToken) Find(id int) (*AccessToken, error) {
-	res, err := QueryRow("SELECT * from access_tokens WHERE id = $1", id)
+func (*AccessToken) Find(id float64) (*AccessToken, error) {
+	res, err := QueryRow("SELECT id, client_id, expires, refresh_token, scopes, secret, user_id, redirect_uri from access_tokens WHERE id = $1", id)
 	if err != nil {
 		return nil, err
 	}
 
 	var atoken AccessToken
 
-	if err = res.Scan(&atoken); err != nil {
+	if err = res.Scan(&atoken.ID, &atoken.ClientID, &atoken.Expires, &atoken.RefreshToken, &atoken.Scopes, &atoken.Secret, &atoken.UserID, &atoken.RedirectURI); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -76,7 +46,7 @@ func (*AccessToken) Find(id int) (*AccessToken, error) {
 }
 
 // Generate saves an AccessToken in database
-func (a *AccessToken) Generate() (int, error) {
+func (a *AccessToken) Generate() (int, string, error) {
 	defaultScopes := "read-write"
 
 	if a.Scopes == "" {
@@ -90,14 +60,14 @@ func (a *AccessToken) Generate() (int, error) {
     	VALUES ($1, $2, $3, $4)
 		RETURNING id`, a.ClientID, a.Scopes, a.Secret, a.UserID)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
 	var id int
 
 	if err = row.Scan(&id); err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
-	return id, nil
+	return id, a.Secret, nil
 }

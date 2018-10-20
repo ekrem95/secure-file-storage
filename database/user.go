@@ -13,14 +13,35 @@ type User struct {
 	CreatedAt int    `json:"created_at"`
 }
 
-// HashPassword returns the bcrypt hash of the password at the given cost.
-func (u *User) HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
 // CheckPasswordHash compares a bcrypt hashed password with its possible plaintext equivalent.
 func (u *User) CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+// HashPassword returns the bcrypt hash of the password at the given cost.
+func (u *User) HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	return string(bytes), err
+}
+
+// Save user
+func (u *User) Save() error {
+	hash, err := u.HashPassword(u.Password)
+	if err != nil {
+		return err
+	}
+
+	row, err := QueryRow(`INSERT INTO users (name, email, password) values($1, $2, $3) RETURNING id`, u.Name, u.Email, hash)
+	if err != nil {
+		return err
+	}
+
+	if err = row.Scan(&u.ID); err != nil {
+		return err
+	}
+
+	u.Password = hash
+
+	return nil
 }

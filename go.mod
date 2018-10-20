@@ -1,6 +1,7 @@
 module github.com/ekrem95/secure-file-storage
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis v6.14.1+incompatible
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect

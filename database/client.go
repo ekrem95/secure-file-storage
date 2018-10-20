@@ -4,23 +4,23 @@ import "database/sql"
 
 // Client type
 type Client struct {
-	ID                 int    `json:"id"`
-	Type               string `json:"type"`
-	RedirectUris       string `json:"redirect_uris"`
-	DefaultRedirectURI string `json:"default_redirect_uri"`
-	AllowedGrantTypes  string `json:"allowed_grant_types"`
+	ID                 int            `json:"id"`
+	Type               string         `json:"type"`
+	RedirectUris       sql.NullString `json:"redirect_uris"`
+	DefaultRedirectURI sql.NullString `json:"default_redirect_uri"`
+	AllowedGrantTypes  sql.NullString `json:"allowed_grant_types"`
 }
 
 // Find returns a Client
-func (*Client) Find(id int) (*Client, error) {
-	res, err := QueryRow("SELECT * from clients WHERE id = $1", id)
+func (*Client) Find(id float64) (*Client, error) {
+	res, err := QueryRow("SELECT id, type from clients WHERE id = $1", id)
 	if err != nil {
 		return nil, err
 	}
 
 	var client Client
 
-	if err = res.Scan(&client); err != nil {
+	if err = res.Scan(&client.ID, &client.Type); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
