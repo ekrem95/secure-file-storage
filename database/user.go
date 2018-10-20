@@ -1,16 +1,18 @@
 package database
 
 import (
+	"time"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
 // User type
 type User struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	CreatedAt int    `json:"created_at"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // CheckPasswordHash compares a bcrypt hashed password with its possible plaintext equivalent.

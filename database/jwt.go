@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -70,17 +71,17 @@ func mapClaims(token *jwt.Token) (interface{}, error) {
 }
 
 // CheckAuth ...
-func CheckAuth(bearer string) error {
+func CheckAuth(bearer string) (int, error) {
 	token, claims, err := ParseJWT(bearer)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	cid := claims["client_id"]
 	aid := claims["atoken_id"]
 
 	if cid == nil || aid == nil {
-		return errMalformedToken
+		return 0, errMalformedToken
 	}
 
 	var client Client
@@ -88,23 +89,27 @@ func CheckAuth(bearer string) error {
 
 	cli, err := client.Find(cid.(float64))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	atk, err := atoken.Find(aid.(float64))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if cli.ID != atk.ClientID {
-		return errMalformedToken
+		return 0, errMalformedToken
+	}
+
+	if time.Now().After(atk.Expires) {
+		return 0, errors.New("Access token is expired")
 	}
 
 	// bearer token must be equal to signed string
 	ss, err := token.SignedString([]byte(atk.Secret))
 	if err != nil || ss != bearer {
-		return errors.New("Invalid token")
+		return 0, errors.New("Invalid token")
 	}
 
-	return nil
+	return atk.UserID, nil
 }

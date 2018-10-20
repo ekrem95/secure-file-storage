@@ -25,7 +25,7 @@ type successResponse struct {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		errorHandler(w, r, http.StatusNotFound, "")
 		return
 	}
@@ -80,7 +80,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func register(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		errorHandler(w, r, http.StatusNotFound, "")
 		return
 	}

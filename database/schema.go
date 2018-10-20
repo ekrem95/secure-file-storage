@@ -38,10 +38,12 @@ func schema(password string) string {
 
 	CREATE TABLE IF NOT EXISTS files (
 	  id BIGSERIAL,
+	  name varchar(255) NOT NULL,
 	  path varchar(255) NOT NULL,
 	  ext varchar(25) NOT NULL,
 	  algorithms varchar(15) NOT NULL,
 	  user_id BIGINT NOT NULL,
+	  created_at timestamp NOT NULL DEFAULT NOW(),
 	  PRIMARY KEY (id)
 	);
 
