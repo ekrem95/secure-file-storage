@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	// prevent 'panic: sql: unknown driver "postgres" (forgotten import?)' error
+	// prevent 'panic: sql: unknown driver "postgres" (forgotten import?)' message
 	_ "github.com/lib/pq"
 )
 
@@ -15,13 +15,7 @@ var (
 )
 
 func init() {
-	// u := User{Password: testPassword}
-	// password, err := u.HashPassword(testPassword)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	//
-	// query := schema(password)
+	// query := schema()
 	// if _, err := Exec(query); err != nil {
 	// 	panic(err)
 	// }

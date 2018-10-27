@@ -15,11 +15,12 @@ import (
 	"github.com/ekrem95/secure-file-storage/encryption"
 )
 
-var baseDir = "/tmp/"
+const perm os.FileMode = 0666
 
-const (
-	perm   os.FileMode = 0666
-	aesKey string      = "aes aes aes aes "
+var (
+	baseDir = "/tmp/"
+	desKey  = []byte("des1key6")
+	aesKey  = []byte("aes aes aes aes ")
 )
 
 func fileHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,32 +79,33 @@ func listFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encrypted, err := readFromFile(path)
+	data, err := readFromFile(path)
 	if err != nil {
 		internalError(w, r)
 		return
 	}
 
-	var plainstring string
-	encryptedstring := string(encrypted)
 	methods := strings.Split(algorithms, ",")
 
 	for _, v := range methods {
 		if v == "AES" {
-			data, err := encryption.DecryptAES(encryptedstring, aesKey)
-			if err != nil {
+			// data will be updated
+			if err = encryption.AesDecrypt(&data, aesKey); err != nil {
 				internalError(w, r)
 				return
 			}
+		}
 
-			// encryptedstring will be equal to new data
-			// to be able to decrypt updated string
-			encryptedstring = data
-			plainstring = data
+		if v == "DES" {
+			// data will be updated
+			if err = encryption.DesDecrypt(&data, desKey); err != nil {
+				internalError(w, r)
+				return
+			}
 		}
 	}
 
-	fmt.Fprint(w, plainstring)
+	fmt.Fprint(w, string(data))
 }
 
 func readFromFile(file string) ([]byte, error) {
@@ -137,28 +139,35 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 	io.Copy(f, file)
 
-	data, err := readFromFile(fpath)
+	bytes, err := readFromFile(fpath)
 	if err != nil {
 		internalError(w, r)
 		return
 	}
 
-	encryptedData, err := encryption.EncryptAES(string(data), aesKey)
+	bytes, err = encryption.AesEncrypt(bytes, aesKey)
 	if err != nil {
 		internalError(w, r)
 		return
 	}
 
-	if err = writeToFile(encryptedData, fpath); err != nil {
+	bytes, err = encryption.DesEncrypt(bytes, desKey)
+	if err != nil {
+		internalError(w, r)
+		return
+	}
+
+	if err = writeToFile(bytes, fpath); err != nil {
 		internalError(w, r)
 		return
 	}
 
 	extension := filepath.Ext(handler.Filename)
+	// reverse order encryption methods in order to be able to decrypt easier
+	alg := "DES,AES"
 
-	f2 := &database.File{Name: handler.Filename, Path: fpath, Ext: extension, Algorithms: "AES", UserID: uid}
-	err = f2.Save()
-	if err != nil {
+	fileInfo := &database.File{Name: handler.Filename, Path: fpath, Ext: extension, Algorithms: alg, UserID: uid}
+	if err = fileInfo.Save(); err != nil {
 		internalError(w, r)
 		return
 	}
@@ -170,6 +179,6 @@ func upload(w http.ResponseWriter, r *http.Request) {
 	response(w, r, res)
 }
 
-func writeToFile(data, file string) error {
-	return ioutil.WriteFile(file, []byte(data), perm)
+func writeToFile(data []byte, file string) error {
+	return ioutil.WriteFile(file, data, perm)
 }

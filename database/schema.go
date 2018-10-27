@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-func schema(password string) string {
-	return fmt.Sprintf(`
+func schema() string {
+	return fmt.Sprint(`
 	CREATE TABLE IF NOT EXISTS clients (
 	  id BIGSERIAL,
 	  type varchar(25) NOT NULL,
@@ -45,8 +45,5 @@ func schema(password string) string {
 	  user_id BIGINT NOT NULL,
 	  created_at timestamp NOT NULL DEFAULT NOW(),
 	  PRIMARY KEY (id)
-	);
-
-	DELETE FROM users WHERE email = 'test@user.com';
-	INSERT INTO users (email, name, password) VALUES ('test@user.com', 'John', '%s');`, password)
+	);`)
 }

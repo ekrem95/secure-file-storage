@@ -8,46 +8,38 @@ import (
 	"io"
 )
 
-// DecryptAES returns original data before encryption
-func DecryptAES(cipherstring string, keystring string) (string, error) {
-	ciphertext := []byte(cipherstring)
-	key := []byte(keystring)
-
+// AesDecrypt returns original data before encryption
+func AesDecrypt(ciphertext *[]byte, key []byte) error {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	if len(ciphertext) < aes.BlockSize {
-		return "", errors.New("Text is too short")
+	if len(*ciphertext) < aes.BlockSize {
+		return errors.New("Text is too short")
 	}
 
 	// Get the 16 byte IV
-	iv := ciphertext[:aes.BlockSize]
+	iv := (*ciphertext)[:aes.BlockSize]
 
 	// Remove the IV from the ciphertext
-	ciphertext = ciphertext[aes.BlockSize:]
+	*ciphertext = (*ciphertext)[aes.BlockSize:]
 
 	// Return a decrypted stream
 	stream := cipher.NewCFBDecrypter(block, iv)
 
 	// Decrypt bytes from ciphertext
-	stream.XORKeyStream(ciphertext, ciphertext)
+	stream.XORKeyStream(*ciphertext, *ciphertext)
 
-	return string(ciphertext), nil
+	return nil
 }
 
-// EncryptAES returns encrypted string
-func EncryptAES(plainstring, keystring string) (string, error) {
-	key := []byte(keystring)
-
+// AesEncrypt returns encrypted string
+func AesEncrypt(plaintext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	// Byte array of the string
-	plaintext := []byte(plainstring)
 
 	// Empty array of 16 + plaintext length
 	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
@@ -57,7 +49,7 @@ func EncryptAES(plainstring, keystring string) (string, error) {
 
 	// Write 16 rand bytes to fill iv
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Return an encrypted stream
@@ -66,5 +58,5 @@ func EncryptAES(plainstring, keystring string) (string, error) {
 	// Encrypt bytes from plaintext to ciphertext
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
 
-	return string(ciphertext), nil
+	return ciphertext, nil
 }
